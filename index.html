@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Truco</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f4c3a, #2d8659);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .score {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .manilha {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .opponent-hand {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .card-back {
+            width: 80px;
+            height: 120px;
+            background: linear-gradient(45deg, #8b4513, #a0522d);
+            border: 2px solid #654321;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #f4e4bc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .table {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            min-height: 140px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            width: 100%;
+        }
+        
+        .played-card {
+            width: 80px;
+            height: 120px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .played-card.red {
+            color: #dc143c;
+        }
+        
+        .player-hand {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .card {
+            width: 80px;
+            height: 120px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+        
+        .card.red {
+            color: #dc143c;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .message {
+            background: rgba(0,0,0,0.4);
+            padding: 15px 30px;
+            border-radius: 25px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .round-info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .suit-symbol {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        @keyframes cardFlip {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(90deg); }
+            100% { transform: rotateY(0deg); }
+        }
+        
+        .card-flip {
+            animation: cardFlip 0.6s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🃏 TRUCO BRASILEIRO 🃏</h1>
+        <div class="score">
+            <div>Você: <span id="playerScore">0</span></div>
+            <div>Oponente: <span id="opponentScore">0</span></div>
+        </div>
+        <div class="round-info">
+            <div>Rodada: <span id="roundNumber">1</span>/3</div>
+            <div>Pontos da Mão: <span id="handPoints">1</span></div>
+        </div>
+        <div class="manilha">
+            Manilha: <span id="manilha">-</span>
+        </div>
+    </div>
+
+    <div class="game-area">
+        <div class="opponent-hand" id="opponentHand">
+            <div class="card-back">TRUCO</div>
+            <div class="card-back">TRUCO</div>
+            <div class="card-back">TRUCO</div>
+        </div>
+
+        <div class="table" id="table">
+            <div style="text-align: center; color: #ccc;">Mesa de Jogo</div>
+        </div>
+
+        <div class="player-hand" id="playerHand">
+        </div>
+    </div>
+
+    <div class="message" id="message">Escolha uma carta para jogar</div>
+
+    <div class="controls">
+        <button class="btn" id="trucoBtn" onclick="pedirTruco()">TRUCO!</button>
+        <button class="btn" id="aceitarBtn" onclick="aceitarTruco()" style="display:none;">ACEITAR</button>
+        <button class="btn" id="recusarBtn" onclick="recusarTruco()" style="display:none;">RECUSAR</button>
+        <button class="btn" id="newGameBtn" onclick="novoJogo()" style="display:none;">NOVO JOGO</button>
+    </div>
+
+    <script>
+        // Definição das cartas e valores
+        const naipes = ['♠', '♥', '♦', '♣'];
+        const valores = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
+        const nomes = {
+            '4': '4', '5': '5', '6': '6', '7': '7',
+            'Q': 'Dama', 'J': 'Valete', 'K': 'Rei', 'A': 'Ás',
+            '2': '2', '3': '3'
+        };
+
+        let baralho = [];
+        let playerHand = [];
+        let opponentHand = [];
+        let vira = null;
+        let manilhas = [];
+        let mesa = [];
+        let rodada = 1;
+        let playerScore = 0;
+        let opponentScore = 0;
+        let handPoints = 1;
+        let trucoState = 'none'; // none, pedido, aceito
+        let playerTurn = true;
+        let roundWins = { player: 0, opponent: 0 };
+
+        function criarBaralho() {
+            baralho = [];
+            for (let naipe of naipes) {
+                for (let valor of valores) {
+                    baralho.push({ valor, naipe, nome: nomes[valor] });
+                }
+            }
+        }
+
+        function embaralhar(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function distribuirCartas() {
+            embaralhar(baralho);
+            playerHand = baralho.slice(0, 3);
+            opponentHand = baralho.slice(3, 6);
+            vira = baralho[6];
+            
+            // Determinar manilhas
+            const viraIndex = valores.indexOf(vira.valor);
+            const manilhaValor = valores[(viraIndex + 1) % valores.length];
+            manilhas = [manilhaValor + '♠', manilhaValor + '♣', manilhaValor + '♥', manilhaValor + '♦'];
+            
+            document.getElementById('manilha').textContent = vira.nome + ' ' + vira.naipe + ' (Manilha: ' + nomes[manilhaValor] + ')';
+        }
+
+        function valorCarta(carta) {
+            const cartaStr = carta.valor + carta.naipe;
+            
+            // Manilhas (valor 13-16)
+            if (manilhas.includes(cartaStr)) {
+                return 13 + manilhas.indexOf(cartaStr);
+            }
+            
+            // Cartas normais (valor 0-9)
+            return valores.indexOf(carta.valor);
+        }
+
+        function renderizarMaoJogador() {
+            const container = document.getElementById('playerHand');
+            container.innerHTML = '';
+            
+            playerHand.forEach((carta, index) => {
+                const cartaEl = document.createElement('div');
+                cartaEl.className = 'card' + (carta.naipe === '♥' || carta.naipe === '♦' ? ' red' : '');
+                cartaEl.innerHTML = `
+                    <div class="suit-symbol">${carta.naipe}</div>
+                    <div>${carta.nome}</div>
+                `;
+                cartaEl.onclick = () => jogarCarta(index);
+                container.appendChild(cartaEl);
+            });
+        }
+
+        function jogarCarta(index) {
+            if (!playerTurn || mesa.length >= 2) return;
+            
+            const carta = playerHand.splice(index, 1)[0];
+            mesa.push({ carta, jogador: 'player' });
+            
+            atualizarMesa();
+            renderizarMaoJogador();
+            
+            playerTurn = false;
+            
+            if (mesa.length === 1) {
+                setTimeout(oponenteJoga, 1000);
+            } else {
+                setTimeout(avaliarRodada, 1000);
+            }
+        }
+
+        function oponenteJoga() {
+            if (opponentHand.length === 0) return;
+            
+            // IA simples: joga carta aleatória
+            const index = Math.floor(Math.random() * opponentHand.length);
+            const carta = opponentHand.splice(index, 1)[0];
+            mesa.push({ carta, jogador: 'opponent' });
+            
+            atualizarMesa();
+            atualizarMaoOponente();
+            
+            if (mesa.length === 2) {
+                setTimeout(avaliarRodada, 1000);
+            } else {
+                playerTurn = true;
+            }
+        }
+
+        function atualizarMesa() {
+            const container = document.getElementById('table');
+            container.innerHTML = '';
+            
+            mesa.forEach(({ carta, jogador }) => {
+                const cartaEl = document.createElement('div');
+                cartaEl.className = 'played-card' + (carta.naipe === '♥' || carta.naipe === '♦' ? ' red' : '');
+                cartaEl.innerHTML = `
+                    <div class="suit-symbol">${carta.naipe}</div>
+                    <div>${carta.nome}</div>
+                `;
+                cartaEl.style.marginTop = jogador === 'opponent' ? '0' : '20px';
+                container.appendChild(cartaEl);
+            });
+        }
+
+        function atualizarMaoOponente() {
+            const container = document.getElementById('opponentHand');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < opponentHand.length; i++) {
+                const cartaEl = document.createElement('div');
+                cartaEl.className = 'card-back';
+                cartaEl.textContent = 'TRUCO';
+                container.appendChild(cartaEl);
+            }
+        }
+
+        function avaliarRodada() {
+            if (mesa.length !== 2) return;
+            
+            const [carta1, carta2] = mesa;
+            const valor1 = valorCarta(carta1.carta);
+            const valor2 = valorCarta(carta2.carta);
+            
+            let vencedor = '';
+            if (valor1 > valor2) {
+                vencedor = carta1.jogador === 'player' ? 'Você' : 'Oponente';
+                roundWins[carta1.jogador === 'player' ? 'player' : 'opponent']++;
+            } else if (valor2 > valor1) {
+                vencedor = carta2.jogador === 'player' ? 'Você' : 'Oponente';
+                roundWins[carta2.jogador === 'player' ? 'player' : 'opponent']++;
+            } else {
+                vencedor = 'Empate';
+            }
+            
+            document.getElementById('message').textContent = `Rodada ${rodada}: ${vencedor} ganhou!`;
+            
+            mesa = [];
+            rodada++;
+            document.getElementById('roundNumber').textContent = rodada;
+            
+            setTimeout(() => {
+                atualizarMesa();
+                
+                if (rodada > 3 || roundWins.player >= 2 || roundWins.opponent >= 2) {
+                    finalizarMao();
+                } else {
+                    playerTurn = vencedor === 'Você' || vencedor === 'Empate';
+                    document.getElementById('message').textContent = 
+                        playerTurn ? 'Sua vez de jogar' : 'Oponente vai jogar';
+                    
+                    if (!playerTurn) {
+                        setTimeout(oponenteJoga, 1000);
+                    }
+                }
+            }, 2000);
+        }
+
+        function finalizarMao() {
+            let vencedorMao = '';
+            if (roundWins.player > roundWins.opponent) {
+                playerScore += handPoints;
+                vencedorMao = 'Você';
+            } else if (roundWins.opponent > roundWins.player) {
+                opponentScore += handPoints;
+                vencedorMao = 'Oponente';
+            }
+            
+            document.getElementById('playerScore').textContent = playerScore;
+            document.getElementById('opponentScore').textContent = opponentScore;
+            
+            if (playerScore >= 12 || opponentScore >= 12) {
+                document.getElementById('message').textContent = 
+                    `🎉 ${playerScore >= 12 ? 'VOCÊ GANHOU' : 'OPONENTE GANHOU'} O JOGO! 🎉`;
+                document.getElementById('newGameBtn').style.display = 'inline-block';
+            } else {
+                document.getElementById('message').textContent = 
+                    `${vencedorMao} ganhou a mão! Nova mão começando...`;
+                setTimeout(novaMao, 3000);
+            }
+        }
+
+        function pedirTruco() {
+            if (handPoints >= 12) return;
+            
+            trucoState = 'pedido';
+            handPoints = handPoints === 1 ? 3 : handPoints === 3 ? 6 : 9;
+            document.getElementById('handPoints').textContent = handPoints;
+            document.getElementById('message').textContent = 'Você pediu TRUCO! Aguardando resposta...';
+            
+            document.getElementById('trucoBtn').style.display = 'none';
+            
+            // Oponente decide (IA simples)
+            setTimeout(() => {
+                if (Math.random() > 0.5) {
+                    aceitarTrucoOponente();
+                } else {
+                    recusarTrucoOponente();
+                }
+            }, 2000);
+        }
+
+        function aceitarTrucoOponente() {
+            trucoState = 'aceito';
+            document.getElementById('message').textContent = 'Oponente aceitou o TRUCO! Continue jogando!';
+            document.getElementById('trucoBtn').style.display = 'inline-block';
+        }
+
+        function recusarTrucoOponente() {
+            playerScore += Math.max(1, handPoints / 3);
+            document.getElementById('playerScore').textContent = playerScore;
+            document.getElementById('message').textContent = 'Oponente recusou o TRUCO! Você ganhou a mão!';
+            
+            setTimeout(() => {
+                if (playerScore >= 12) {
+                    finalizarMao();
+                } else {
+                    novaMao();
+                }
+            }, 2000);
+        }
+
+        function novaMao() {
+            // Reset para nova mão
+            roundWins = { player: 0, opponent: 0 };
+            rodada = 1;
+            handPoints = 1;
+            trucoState = 'none';
+            mesa = [];
+            playerTurn = true;
+            
+            document.getElementById('roundNumber').textContent = rodada;
+            document.getElementById('handPoints').textContent = handPoints;
+            document.getElementById('trucoBtn').style.display = 'inline-block';
+            document.getElementById('message').textContent = 'Nova mão! Escolha uma carta para jogar';
+            
+            criarBaralho();
+            distribuirCartas();
+            renderizarMaoJogador();
+            atualizarMaoOponente();
+            atualizarMesa();
+        }
+
+        function novoJogo() {
+            playerScore = 0;
+            opponentScore = 0;
+            document.getElementById('playerScore').textContent = playerScore;
+            document.getElementById('opponentScore').textContent = opponentScore;
+            document.getElementById('newGameBtn').style.display = 'none';
+            novaMao();
+        }
+
+        // Inicializar jogo
+        criarBaralho();
+        distribuirCartas();
+        renderizarMaoJogador();
+        atualizarMaoOponente();
+    </script>
+</body>
+</html>
